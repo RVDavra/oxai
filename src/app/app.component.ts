@@ -21,7 +21,6 @@ export class AppComponent implements OnInit {
   ngOnInit() {
     const dataclone = JSON.parse(JSON.stringify(this.data))
     this.dataset = this.generateStates(dataclone, this.currentPlayer);
-    console.log(this.dataset);
   }
 
   generateStates(data: number[][], player: Boolean): StateModel {
