@@ -1,0 +1,20 @@
+.modal {
+    display: flex;
+    align-items: center;
+    background: rgba(0,0,0,0.6);
+}
+
+.modal-dialog {
+    width: 225px;
+    margin: 0 auto;
+    max-width: 300px;
+}
+
+.modal-content {
+    border: 1px solid #ccc;
+}
+
+.modal-header,.modal-footer {
+    border: none;
+    justify-content: center;
+}

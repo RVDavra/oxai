@@ -1,0 +1,27 @@
+<app-modal *ngIf="isModalOpen" (closeEvent)="closeModal($event)" [message]="modalMessage"></app-modal>
+<div class="container">
+  <h1>Tic Tac Toe</h1>
+  <div class="game-container">
+    <div class="row-container">
+      <div #btns id="item00" class="item" (click)="changeSet($event,0,0)">{{getStr(data[0][0])}}</div>
+      <div #btns id="item01" class="item" (click)="changeSet($event,0,1)">{{getStr(data[0][1])}}</div>
+      <div #btns id="item02" class="item" (click)="changeSet($event,0,2)">{{getStr(data[0][2])}}</div>
+    </div>
+    <div class="row-container">
+      <div #btns id="item10" class="item" (click)="changeSet($event,1,0)">{{getStr(data[1][0])}}</div>
+      <div #btns id="item11" class="item" (click)="changeSet($event,1,1)">{{getStr(data[1][1])}}</div>
+      <div #btns id="item12" class="item" (click)="changeSet($event,1,2)">{{getStr(data[1][2])}}</div>
+    </div>
+    <div class="row-container">
+      <div #btns id="item20" class="item" (click)="changeSet($event,2,0)">{{getStr(data[2][0])}}</div>
+      <div #btns id="item21" class="item" (click)="changeSet($event,2,1)">{{getStr(data[2][1])}}</div>
+      <div #btns id="item22" class="item" (click)="changeSet($event,2,2)">{{getStr(data[2][2])}}</div>
+    </div>
+  </div>
+  <footer>
+    <div>
+      Created By: Ritesh Davra
+    </div>
+  </footer>
+</div>
+
