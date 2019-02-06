@@ -13,6 +13,7 @@ export class AppComponent implements OnInit {
   isModalOpen = false;
   currentPlayer = true;
   inTransition = false;
+  currentState;
   modalMessage = "O Wins";
   data = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
   dataset: StateModel;
@@ -20,6 +21,7 @@ export class AppComponent implements OnInit {
   ngOnInit() {
     const dataclone = JSON.parse(JSON.stringify(this.data))
     this.dataset = this.generateStates(dataclone, this.currentPlayer);
+    console.log(this.dataset);
   }
 
   generateStates(data: number[][], player: Boolean): StateModel {
@@ -99,6 +101,7 @@ export class AppComponent implements OnInit {
   closeModal(isReset) {
     this.isModalOpen = false;
     this.currentPlayer = true;
+    this.currentState = undefined;
     if (isReset) {
       this.data = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
       this.btns.forEach((element) => { element.nativeElement.classList.remove("active") });
@@ -107,11 +110,17 @@ export class AppComponent implements OnInit {
 
   makeCPUMove() {
     let isTurnDone = false;
-    const state: StateModel = this.findState(this.dataset);
+    const state: StateModel = !!this.currentState ? 
+      this.findState(this.currentState):
+      this.findState(this.dataset);
     if (state.hasChild()) {
       let newState = state.children[0];
       state.children.forEach((child) => {
-        if (newState.heuristic < child.heuristic) {
+        if (newState.heuristic < child.heuristic &&
+          newState.winner !== 2) {
+          newState = child;
+        }
+        if (child.winner === 2) {
           newState = child;
         }
       });
@@ -127,6 +136,7 @@ export class AppComponent implements OnInit {
       }
       if (x !== -1 && y !== -1) {
         isTurnDone = true;
+        this.currentState = newState;
         let element = document.getElementById("item"+x+y);
         this.changeSet(element, x, y, true);
       }
