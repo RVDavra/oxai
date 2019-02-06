@@ -1,5 +1,4 @@
 import { Component, OnInit, ViewChildren, ElementRef } from '@angular/core';
-import * as $ from 'jquery';
 import * as _ from 'underscore';
 import { StateModel } from './state-model';
 
@@ -23,28 +22,24 @@ export class AppComponent implements OnInit {
     this.dataset = this.generateStates(dataclone, this.currentPlayer);
   }
 
-  generateStates(data: number[][], player: Boolean): StateModel {
+  generateStates(data: number[][], player: boolean): StateModel {
     const state: StateModel = new StateModel(data);
-    const children = [];
+    let children: StateModel[] = [];
     state.winner = this.isWonAI(data);
     if (state.winner !== 0) {
-      state.heuristic = state.winner === 1 ? 0 : 1;
       return state;
     }
-    let heuristic = 0;
     for (let i=0; i<3; i++) {
       for (let j=0; j<3; j++) {
         if (data[i][j] === 0) {
           const newData = JSON.parse(JSON.stringify(data));
           newData[i][j] = player ? 1 : 2;
           const newState = this.generateStates(newData, !player);
-          heuristic += newState.heuristic;
           children.push(newState);
         }
       }
     }
     state.children = children;
-    state.heuristic = heuristic;
     return state;
   }
 
@@ -108,47 +103,58 @@ export class AppComponent implements OnInit {
   }
 
   makeCPUMove() {
-    let isTurnDone = false;
     const state: StateModel = !!this.currentState ? 
       this.findState(this.currentState):
       this.findState(this.dataset);
-    if (state.hasChild()) {
-      let newState = state.children[0];
-      state.children.forEach((child) => {
-        if (newState.heuristic < child.heuristic &&
-          newState.winner !== 2) {
-          newState = child;
+    const data: { state: StateModel, minmax: number} [] = [];
+    state.children.forEach(s => 
+      data.push({
+        state: s,
+        minmax: this.minimax(s, this.currentPlayer, 9)
+      }));
+    let newState = _.max(data, "minmax").state;
+    let x = -1;
+    let y = -1;
+    for (let i=0; i<3; i++) {
+      for (let j=0; j<3; j++) {
+        if (newState.state[i][j] !== 0 && this.data[i][j] === 0) {
+          x = i;
+          y = j;
         }
-        if (child.winner === 2) {
-          newState = child;
-        }
-      });
-      let x = -1;
-      let y = -1;
-      for (let i=0; i<3; i++) {
-        for (let j=0; j<3; j++) {
-          if (newState.state[i][j] !== 0 && this.data[i][j] === 0) {
-            x = i;
-            y = j;
-          }
-        }
-      }
-      if (x !== -1 && y !== -1) {
-        isTurnDone = true;
-        this.currentState = newState;
-        let element = document.getElementById("item"+x+y);
-        this.changeSet(element, x, y, true);
       }
     }
-    while (!isTurnDone) {
-      let i = Math.floor((Math.random() * 8));
-      let x = Math.floor(i / 3);
-      let y = i % 3;
-      if(this.data[x][y] == 0) {
-        isTurnDone = true;
-        let element = document.getElementById("item"+x+y);
-        this.changeSet(element, x, y, true);
-      }
+    if (x !== -1 && y !== -1) {
+      this.currentState = newState;
+      let element = document.getElementById("item"+x+y);
+      this.changeSet(element, x, y, true);
+    }
+  }
+
+  minimax(state: StateModel, player: boolean, depth: number) {
+    if (state.winner === 1) {
+      return -100;
+    }
+    if (state.winner === 2) {
+      return 100;
+    }
+    if (state.winner !== 0) {
+      return 0;
+    }
+    if (depth === 0) {
+      return 0;
+    }
+    const data: { state: StateModel, minmax: number} [] = [];
+    state.children.forEach(s => 
+      data.push({
+        state: s,
+        minmax: this.minimax(s, !player, depth - 1) - depth
+      })
+    );
+    
+    if (player) {
+      return _.max(data, (item) => item.minmax).minmax;
+    } else {
+      return _.min(data, (item) => item.minmax).minmax;
     }
   }
 
