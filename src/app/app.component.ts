@@ -13,7 +13,7 @@ export class AppComponent implements OnInit {
   currentPlayer = true;
   inTransition = false;
   currentState;
-  modalMessage = "O Wins";
+  modalMessage = "you Wins";
   data = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
   dataset: StateModel;
   @ViewChildren("btns") btns: ElementRef[];
