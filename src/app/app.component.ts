@@ -39,7 +39,12 @@ export class AppComponent implements OnInit {
         }
       }
     }
+    if (children.some(s => s.winner !== 0)) {
+      children = children.filter(s => s.winner !== 0)
+    }
+    children.forEach(s => s.minmax = this.minimax(s, player, 5));
     state.children = children;
+    state.minmax = this.minimax(state, player, 5);
     return state;
   }
 
@@ -110,7 +115,7 @@ export class AppComponent implements OnInit {
     state.children.forEach(s => 
       data.push({
         state: s,
-        minmax: this.minimax(s, this.currentPlayer, 9)
+        minmax: s.minmax
       }));
     let newState = _.max(data, "minmax").state;
     let x = -1;
