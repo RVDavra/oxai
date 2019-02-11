@@ -1,4 +1,5 @@
-<app-modal *ngIf="isModalOpen" (closeEvent)="closeModal($event)" [message]="modalMessage"></app-modal>
+<app-modal *ngIf="isModalOpen" [confirmPopup]="confirmPopup" (closeEvent)="closeModal($event)" [message]="modalMessage">
+</app-modal>
 <div class="container">
   <h1>Tic Tac Toe</h1>
   <div class="game-container">
@@ -24,4 +25,3 @@
     </div>
   </footer>
 </div>
-

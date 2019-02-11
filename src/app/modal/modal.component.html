@@ -5,7 +5,8 @@
         <h4 class="modal-title">{{message}}</h4>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-sm btn-secondary" (click)="close(true)">Retry</button>
+        <button *ngIf="confirmPopup" class="btn btn-sm btn-secondary" (click)="close(false)">Stay</button>
+        <button class="btn btn-sm btn-secondary" (click)="close(true)">New Game</button>
       </div>
     </div>
   </div>

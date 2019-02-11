@@ -10,6 +10,8 @@ import { StateModel } from './state-model';
 export class AppComponent implements OnInit {
 
   isModalOpen = false;
+  confirmPopup = false;
+  noDrawPopup = false;
   currentPlayer = true;
   inTransition = false;
   currentState;
@@ -24,9 +26,15 @@ export class AppComponent implements OnInit {
 
   generateStates(data: number[][], player: boolean): StateModel {
     const state: StateModel = new StateModel(data);
-    let children: StateModel[] = [];
-    state.winner = this.isWonAI(data);
+    state.winner = this.isWon(data);
     if (state.winner !== 0) {
+      if (state.winner === 1) {
+        state.minmax = -100;
+      } else if (state.winner === 2) {
+        state.minmax = 100;
+      } else {
+        state.minmax = 0;
+      }
       return state;
     }
     for (let i=0; i<3; i++) {
@@ -35,16 +43,19 @@ export class AppComponent implements OnInit {
           const newData = JSON.parse(JSON.stringify(data));
           newData[i][j] = player ? 1 : 2;
           const newState = this.generateStates(newData, !player);
-          children.push(newState);
+          state.children.push(newState);
         }
       }
     }
-    if (children.some(s => s.winner !== 0)) {
-      children = children.filter(s => s.winner !== 0)
+    if (state.children.some(s => s.winner !== 0)) {
+      state.children = state.children.filter(s => s.winner !== 0);
     }
-    children.forEach(s => s.minmax = this.minimax(s, player, 5));
-    state.children = children;
-    state.minmax = this.minimax(state, player, 5);
+    if (player) {
+      state.minmax = _.min(state.children, "minmax").minmax - 1; 
+    } else {
+      state.minmax = _.max(state.children, "minmax").minmax - 1;
+    }
+    state.minmax = state.minmax - 1;
     return state;
   }
 
@@ -60,9 +71,10 @@ export class AppComponent implements OnInit {
         this.inTransition = false;
         this.data[x][y] = this.currentPlayer ? 1 : 2;
         this.currentPlayer = !this.currentPlayer;
-        let winner = this.isWon();
+        let winner = this.isWon(this.data);
         if (winner != 0) {
           this.modalMessage = winner !== 4 ? (winner === 1? "You Won" : "AI Won") : "Draw";
+          this.confirmPopup = false;
           this.isModalOpen = true;
         }
         if (!this.currentPlayer && winner === 0) { this.makeCPUMove(); }
@@ -70,17 +82,17 @@ export class AppComponent implements OnInit {
     }
   }
 
-  isWon() {
+  isWon(data: number[][]) {
     const cArr: number[][] = [];
     let won = 0;
-    this.data.forEach((arr) => { cArr.push(arr) });
-    this.data.forEach((arr, index) => cArr.push(_.pluck(this.data, index)));
-    cArr.push(this.data.map((value, index) => { return this.data[index][index]; }));
-    cArr.push(this.data.map((value, index) => { return this.data[index][2 - index]; }));
+    data.forEach((arr) => { cArr.push(arr) });
+    data.forEach((arr, index) => cArr.push(_.pluck(data, index)));
+    cArr.push(data.map((value, index) => { return data[index][index]; }));
+    cArr.push(data.map((value, index) => { return data[index][2 - index]; }));
     cArr.forEach((arr) => { if (arr[0] !== 0 && _.uniq(arr).length === 1) { won = arr[0]; } });
     if (won === 0) {
       let draw = true;
-      this.data.forEach((arr) => arr.forEach((val) => { if (val === 0) { draw = false } }));
+      data.forEach((arr) => arr.forEach((val) => { if (val === 0) { draw = false } }));
       return draw ? 4 : 0;
     } else {
       return won;
@@ -99,11 +111,15 @@ export class AppComponent implements OnInit {
 
   closeModal(isReset) {
     this.isModalOpen = false;
-    this.currentPlayer = true;
-    this.currentState = undefined;
+    this.confirmPopup = false;
     if (isReset) {
+      this.noDrawPopup = false;
+      this.currentPlayer = true;
+      this.currentState = undefined;
       this.data = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
       this.btns.forEach((element) => { element.nativeElement.classList.remove("active") });
+    } else {
+      this.noDrawPopup = true;
     }
   }
 
@@ -111,15 +127,8 @@ export class AppComponent implements OnInit {
     const state: StateModel = !!this.currentState ? 
       this.findState(this.currentState):
       this.findState(this.dataset);
-    const data: { state: StateModel, minmax: number} [] = [];
-    state.children.forEach(s => 
-      data.push({
-        state: s,
-        minmax: s.minmax
-      }));
-    let newState = _.max(data, "minmax").state;
-    let x = -1;
-    let y = -1;
+    let newState: StateModel = _.max(state.children, "minmax");
+    let x = -1, y = -1;
     for (let i=0; i<3; i++) {
       for (let j=0; j<3; j++) {
         if (newState.state[i][j] !== 0 && this.data[i][j] === 0) {
@@ -133,33 +142,11 @@ export class AppComponent implements OnInit {
       let element = document.getElementById("item"+x+y);
       this.changeSet(element, x, y, true);
     }
-  }
-
-  minimax(state: StateModel, player: boolean, depth: number) {
-    if (state.winner === 1) {
-      return -100;
-    }
-    if (state.winner === 2) {
-      return 100;
-    }
-    if (state.winner !== 0) {
-      return 0;
-    }
-    if (depth === 0) {
-      return 0;
-    }
-    const data: { state: StateModel, minmax: number} [] = [];
-    state.children.forEach(s => 
-      data.push({
-        state: s,
-        minmax: this.minimax(s, !player, depth - 1) - depth
-      })
-    );
-    
-    if (player) {
-      return _.max(data, (item) => item.minmax).minmax;
-    } else {
-      return _.min(data, (item) => item.minmax).minmax;
+    if (this.currentState.children.length !== 0 && !this.noDrawPopup &&
+      this.currentState.children.every(s => s.minmax >= -8 && s.minmax <= 8)) {
+      this.confirmPopup = true;
+      this.modalMessage = "Going to Draw";
+      this.isModalOpen = true;
     }
   }
 
@@ -192,22 +179,5 @@ export class AppComponent implements OnInit {
       }
     }
     return count > 0;
-  }
-
-  isWonAI(data: number[][]) {
-    const cArr: number[][] = [];
-    let won = 0;
-    data.forEach((arr) => { cArr.push(arr) });
-    data.forEach((arr, index) => cArr.push(_.pluck(data, index)));
-    cArr.push(data.map((value, index) => { return data[index][index]; }));
-    cArr.push(data.map((value, index) => { return data[index][2 - index]; }));
-    cArr.forEach((arr) => { if (arr[0] !== 0 && _.uniq(arr).length === 1) { won = arr[0]; } });
-    if (won === 0) {
-      let draw = true;
-      data.forEach((arr) => arr.forEach((val) => { if (val === 0) { draw = false } }));
-      return draw ? 4 : 0;
-    } else {
-      return won;
-    }
   }
 }
